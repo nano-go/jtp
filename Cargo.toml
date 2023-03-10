@@ -1,0 +1,19 @@
+[package]
+name = "jtp"
+version = "0.1.0"
+description = "A simple implementation of thread pool, similar to the ThreadPoolExecutor in java."
+edition = "2021"
+license = "Apache-2.0"
+readme = "README.md"
+homepage = "https://github.com/nano-go/jtp"
+repository = "https://github.com/nano-go/jtp"
+exclude = [
+	"Session.vim"
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crossbeam-channel = "0.5.7"
+num_cpus = "1.15.0"
+
