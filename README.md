@@ -14,7 +14,7 @@ Or add this to your `Cargo.toml`:
 
 ```
 [dependencies]
-jtp = "0.1.0"
+jtp = "0.1.1"
 ```
 
 And use this library:
