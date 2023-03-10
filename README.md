@@ -21,20 +21,16 @@ And use this library:
 
 ```rust
 // Creates a thread pool.
-let mut thread_pool = ThreadPoolBuilder::default()
-	.set_core_pool_size(6) // Sets the number of core threads.
-	.set_max_pool_size(10) // Sets the maximum number of threads.
-	.set_channel_capacity(100) // Sets the capacity of the task queue.
-	.set_rejected_hask_handler(RejectedTaskHandler::Abort)
+let thread_pool = ThreadPoolBuilder::default()
+	.core_pool_size(6) // Sets the number of core threads.
+	.max_pool_size(10) // Sets the maximum number of threads.
+	.channel_capacity(100) // Sets the capacity of the task queue.
+	.rejected_hask_handler(RejectedTaskHandler::Abort)
 	.build()
 	.unwrap();
 
-for _ in 0..50 {
-	// Execute a task in the future.
-	thread_pool.execute(|| {
-			println!("Hello World");
-	});
-}
+thread_pool.execute(|| println!("Hello World"));
+thread_pool.wait();
 ```
 
 ## License
