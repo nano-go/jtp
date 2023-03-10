@@ -59,15 +59,15 @@ impl Default for ThreadPoolBuilder {
     /// Creates a new builder with the default configuration.
     ///
     /// # Default Configuration
-    /// - channel_capacity: 1000
-    /// - max_pool_size: the number of physical cores of the current
+    /// - `channel_capacity`: 1000
+    /// - `max_pool_size`: the number of physical cores of the current
     /// system
-    /// - core_pool_size: the half of the `max_pool_size` at least 1
-    /// - keep_alive_time: 1 second
-    /// - rejected_task_handler: [`RejectedTaskHandler::Abort`]
-    /// - before_execute: an empty closure `|_| ()`
-    /// - after_execute: an empty closure `|_| ()`
-    /// - thread_factory: `|| thread::Builder::new()`
+    /// - `core_pool_size`: the half of the `max_pool_size` at least 1
+    /// - `keep_alive_time`: 1 second
+    /// - `rejected_task_handler`: [`RejectedTaskHandler::Abort`]
+    /// - `before_execute`: an empty closure `|_| ()`
+    /// - `after_execute`: an empty closure `|_| ()`
+    /// - `thread_factory`: `|| thread::Builder::new()`
     fn default() -> Self {
         Self {
             channel_capacity: 1000,
@@ -79,7 +79,7 @@ impl Default for ThreadPoolBuilder {
                 before_execute: Box::new(|_| {}),
                 after_execute: Box::new(|_| {}),
             },
-            thread_factory: Arc::new(|| thread::Builder::new()),
+            thread_factory: Arc::new(thread::Builder::new),
         }
     }
 }
@@ -137,8 +137,7 @@ impl ThreadPoolBuilder {
     #[must_use]
     pub fn lisenter_before_execute<F>(mut self, executor: F) -> Self
     where
-        F: Fn(usize),
-        F: Send + Sync + 'static,
+        F: Fn(usize) + Send + Sync + 'static,
     {
         self.task_lisenters.before_execute = Box::new(executor);
         self
@@ -149,8 +148,7 @@ impl ThreadPoolBuilder {
     #[must_use]
     pub fn lisenter_after_execute<F>(mut self, executor: F) -> Self
     where
-        F: Fn(usize),
-        F: Send + Sync + 'static,
+        F: Fn(usize) + Send + Sync + 'static,
     {
         self.task_lisenters.after_execute = Box::new(executor);
         self
@@ -161,8 +159,7 @@ impl ThreadPoolBuilder {
     #[must_use]
     pub fn thread_factory_fn<F>(mut self, f: F) -> Self
     where
-        F: Fn() -> thread::Builder,
-        F: Send + Sync + 'static,
+        F: Fn() -> thread::Builder + Send + Sync + 'static,
     {
         self.thread_factory = Arc::new(f);
         self
@@ -217,9 +214,9 @@ impl ThreadPoolBuilder {
             ));
         }
 
-        if self.core_pool_size <= 0 {
+        if self.core_pool_size == 0 {
             return Err(tp_builder_error!(
-                "Invalid arguments: core_pool_size({}) <= 0.",
+                "Invalid arguments: core_pool_size({}) == 0.",
                 self.core_pool_size
             ));
         }

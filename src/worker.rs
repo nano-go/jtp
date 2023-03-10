@@ -17,7 +17,7 @@ pub(crate) struct Worker {
 }
 
 fn create_core_work_thread(
-    thread_factory: Arc<ThreadFactory>,
+    thread_factory: &Arc<ThreadFactory>,
     receiver: Receiver<Task>,
     task: Task,
 ) -> JoinHandle<()> {
@@ -33,7 +33,7 @@ fn create_core_work_thread(
 }
 
 fn create_work_thread(
-    thread_factory: Arc<ThreadFactory>,
+    thread_factory: &Arc<ThreadFactory>,
     receiver: Receiver<Task>,
     keep_alive_time: Duration,
     task: Task,
@@ -60,13 +60,13 @@ impl Worker {
     ) -> Self {
         Worker {
             keep_alive_time,
-            thread_factory: thread_factory.clone(),
             receiver: receiver.clone(),
             handle: if is_core {
-                create_core_work_thread(thread_factory, receiver, task)
+                create_core_work_thread(&thread_factory, receiver, task)
             } else {
-                create_work_thread(thread_factory, receiver, keep_alive_time, task)
+                create_work_thread(&thread_factory, receiver, keep_alive_time, task)
             },
+            thread_factory,
         }
     }
 
@@ -75,7 +75,7 @@ impl Worker {
     pub(crate) fn restart(&mut self, task: Task) {
         debug_assert!(self.is_finished());
         self.handle = create_work_thread(
-            self.thread_factory.clone(),
+            &self.thread_factory,
             self.receiver.clone(),
             self.keep_alive_time,
             task,
@@ -90,7 +90,7 @@ impl Worker {
     #[inline]
     pub(crate) fn join(self) -> thread::Result<()> {
         if self.handle.thread().id() != thread::current().id() {
-            self.handle.join()?
+            self.handle.join()?;
         }
         Ok(())
     }

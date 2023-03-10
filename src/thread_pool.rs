@@ -69,7 +69,7 @@ impl ThreadPoolSharedData {
             .lock()
             .unwrap()
             .as_ref()
-            .map_or(0, |x| x.len())
+            .map_or(0, Vec::len)
     }
 
     pub(crate) fn num_of_active_workers(&self) -> usize {
@@ -127,7 +127,7 @@ impl ThreadPoolSharedData {
 /// # Rejected Task
 ///
 /// New tasks will be rejected when the channel is full and the number
-/// of worker threads in the thread pool reaches a certain number(max_pool_size). A rejected task will be handled by the [`RejectedTaskHandler`].
+/// of worker threads in the thread pool reaches a certain number(`max_pool_size`). A rejected task will be handled by the [`RejectedTaskHandler`].
 /// You can set the handler for rejected tasks when you build a thread
 /// pool with [`ThreadPoolBuilder`].
 #[derive(Clone)]
@@ -182,8 +182,7 @@ impl ThreadPool {
     /// [`Closed`]: crate::TPError::Closed
     pub fn execute<F>(&self, task_fn: F) -> Result<(), TPError>
     where
-        F: FnOnce(),
-        F: Send + UnwindSafe + 'static,
+        F: FnOnce() + Send + UnwindSafe + 'static,
     {
         if self.is_closed() {
             return Err(TPError::Closed);
@@ -201,10 +200,11 @@ impl ThreadPool {
         }
         // Release lock.
         drop(core_workers);
-        return self.send_task(task);
+        self.send_task(task)
     }
 
     /// Counts all active worker threads and returns it.
+    #[must_use]
     pub fn active_count(&self) -> usize {
         self.share.num_of_active_workers() + self.share.num_of_core_workers()
     }
@@ -233,6 +233,7 @@ impl ThreadPool {
     }
 
     /// Returns `true` if the thread pool is closed.
+    #[must_use]
     pub fn is_closed(&self) -> bool {
         self.share.sender.lock().unwrap().is_none()
     }
@@ -283,7 +284,7 @@ impl ThreadPool {
     fn wait_workers(workers: Option<Vec<Worker>>) -> std::thread::Result<()> {
         if let Some(workers) = workers {
             for worker in workers {
-                worker.join()?
+                worker.join()?;
             }
         }
         Ok(())
@@ -332,17 +333,19 @@ impl ThreadPool {
             return self.reject(task);
         }
 
-        let workers = workers.as_mut().unwrap();
+        let non_core_workers = workers.as_mut().unwrap();
         // Attempt to find an idle worker.
-        let idle_worker = workers.iter_mut().find(|worker| worker.is_finished());
+        let idle_worker = non_core_workers
+            .iter_mut()
+            .find(|worker| worker.is_finished());
         if let Some(idle_worker) = idle_worker {
             idle_worker.restart(task);
             return Ok(());
         }
 
-        if workers.len() < self.max_pool_size - self.core_pool_size {
+        if non_core_workers.len() < self.max_pool_size - self.core_pool_size {
             let worker = self.create_worker(task, false);
-            workers.push(worker);
+            non_core_workers.push(worker);
             Ok(())
         } else {
             // Release lock.
