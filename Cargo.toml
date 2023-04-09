@@ -1,6 +1,6 @@
 [package]
 name = "jtp"
-version = "0.1.1"
+version = "0.1.2"
 description = "A simple implementation of thread pool, similar to the ThreadPoolExecutor in java."
 edition = "2021"
 license = "Apache-2.0"
