@@ -25,7 +25,7 @@ let thread_pool = ThreadPoolBuilder::default()
 	.core_pool_size(6) // Sets the number of core threads.
 	.max_pool_size(10) // Sets the maximum number of threads.
 	.channel_capacity(100) // Sets the capacity of the task queue.
-	.rejected_hask_handler(RejectedTaskHandler::Abort)
+	.rejected_handler(RejectedTaskHandler::Abort)
 	.build()
 	.unwrap();
 
