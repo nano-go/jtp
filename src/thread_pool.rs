@@ -7,7 +7,6 @@ use crate::{
 use crossbeam_channel::{bounded, Receiver, Sender, TrySendError};
 
 use std::{
-    panic::UnwindSafe,
     sync::{atomic::AtomicUsize, Arc, Mutex},
     thread,
     time::Duration,
@@ -182,7 +181,7 @@ impl ThreadPool {
     /// [`Closed`]: crate::TPError::Closed
     pub fn execute<F>(&self, task_fn: F) -> Result<(), TPError>
     where
-        F: FnOnce() + Send + UnwindSafe + 'static,
+        F: FnOnce() + Send + 'static,
     {
         if self.is_closed() {
             return Err(TPError::Closed);
@@ -219,8 +218,7 @@ impl ThreadPool {
     /// ```
     /// use jtp::ThreadPoolBuilder;
     /// let thread_pool = ThreadPoolBuilder::default()
-    ///     .build()
-    ///     .unwrap();
+    ///     .build();
     ///
     /// thread_pool.shutdown();
     ///
@@ -259,8 +257,7 @@ impl ThreadPool {
     /// use std::sync::Arc;
     ///
     /// let mut thread_pool = ThreadPoolBuilder::default()
-    ///     .build()
-    ///     .unwrap();
+    ///     .build();
     ///
     /// let sum = Arc::new(AtomicUsize::new(0));
     /// for _ in 0..10 {
@@ -389,8 +386,7 @@ mod tests {
             .max_pool_size(10)
             .channel_capacity(100)
             .keep_alive_time(Duration::from_secs(100))
-            .build()
-            .unwrap();
+            .build();
 
         let sum = Arc::new(AtomicUsize::new(0));
         let mut handles = Vec::new();
@@ -424,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_shutdown_in_multiple_threads() {
-        let thread_pool = ThreadPoolBuilder::default().build().unwrap();
+        let thread_pool = ThreadPoolBuilder::default().build();
         let counter = Arc::new(AtomicUsize::new(0));
         let mut handles = Vec::new();
         for _ in 0..100 {
@@ -462,8 +458,7 @@ mod tests {
                 assert!(map1.lock().unwrap().contains(&id));
             })
             .channel_capacity(50)
-            .build()
-            .unwrap();
+            .build();
 
         for _ in 0..50 {
             thread_pool
@@ -485,8 +480,7 @@ mod tests {
             .max_pool_size(5)
             .channel_capacity(5)
             .rejected_handler(RejectedTaskHandler::Discard)
-            .build()
-            .unwrap();
+            .build();
 
         for _ in 0..20 {
             thread_pool

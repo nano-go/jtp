@@ -1,6 +1,6 @@
-use std::{panic::UnwindSafe, sync::Arc};
+use std::sync::Arc;
 
-pub type TaskFn = Box<dyn FnOnce() + Send + UnwindSafe + 'static>;
+pub type TaskFn = Box<dyn FnOnce() + Send + 'static>;
 
 pub(crate) struct TaskListeners {
     pub(crate) before_execute: Box<dyn Fn(usize) + Send + Sync>,
