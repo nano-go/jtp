@@ -17,8 +17,7 @@
 //!     .core_pool_size(5)
 //!     .max_pool_size(10)
 //!     .channel_capacity(100)
-//!     .build()
-//!     .unwrap();
+//!     .build();
 //!
 //! thread_pool.execute(|| println!("Hello World")).unwrap();
 //!

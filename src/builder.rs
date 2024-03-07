@@ -1,26 +1,6 @@
-use std::{fmt::Display, sync::Arc, thread, time::Duration};
+use std::{sync::Arc, thread, time::Duration};
 
 use crate::{task::TaskListeners, RejectedTaskHandler, ThreadFactory, ThreadPool};
-
-/// An error returned from the [`ThreadPoolBuilder::build`].
-#[derive(Debug)]
-pub struct TPBuilderError {
-    msg: String,
-}
-
-impl std::error::Error for TPBuilderError {}
-
-impl Display for TPBuilderError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.msg)
-    }
-}
-
-macro_rules! tp_builder_error {
-    ($($arg:tt)*) => {
-        TPBuilderError { msg: format!($($arg)*) }
-    };
-}
 
 /// A builder of the [`ThreadPool`], which can be used to configure
 /// the properties of a new thread pool.
@@ -42,8 +22,7 @@ macro_rules! tp_builder_error {
 ///     .thread_factory_fn(|| {
 ///         std::thread::Builder::new().stack_size(1024 * 4)
 ///     })
-///     .build()
-///     .unwrap();
+///     .build();
 /// ```
 pub struct ThreadPoolBuilder {
     pub(crate) channel_capacity: usize,
@@ -167,61 +146,26 @@ impl ThreadPoolBuilder {
 
     /// Creates a thread pool with the arguments.
     ///
-    /// # Errors
+    /// # Panics
     ///
-    /// Returns an error if you build a thread pool with invalid
-    /// arguments.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use jtp::ThreadPoolBuilder;
-    /// let thread_pool = ThreadPoolBuilder::default()
-    ///     .max_pool_size(5)
-    ///     .core_pool_size(6)
-    ///     .build();
-    ///
-    /// // core_pool_size must <= max_pool_size
-    /// assert!(thread_pool.is_err());
-    ///
-    /// let thread_pool = ThreadPoolBuilder::default()
-    ///     .channel_capacity(5)
-    ///     .max_pool_size(20)
-    ///     .build();
-    ///
-    /// // max_pool_size  must <= channel_capacity
-    /// assert!(thread_pool.is_err());
-    /// ```
-    pub fn build(self) -> Result<ThreadPool, TPBuilderError> {
-        self.check_arguments()?;
-        Ok(ThreadPool::from_builder(self))
+    /// Panics if the builder with invalid arguments.
+    pub fn build(self) -> ThreadPool {
+        self.check_arguments();
+        ThreadPool::from_builder(self)
     }
 
-    fn check_arguments(&self) -> Result<(), TPBuilderError> {
+    fn check_arguments(&self) {
         if self.channel_capacity < self.max_pool_size {
-            return Err(tp_builder_error!(
-                "Invalid arguments: max_tasks({}) < max_pool_size({}).",
-                self.channel_capacity,
-                self.max_pool_size
-            ));
+            panic!("max_tasks must < max_pool_size.",);
         }
 
         if self.max_pool_size < self.core_pool_size {
-            return Err(tp_builder_error!(
-                "Invalid arguments: max_pool_size({}) < core_pool_size({}).",
-                self.max_pool_size,
-                self.core_pool_size
-            ));
+            panic!("max_pool_size must < core_pool_size.",);
         }
 
         if self.core_pool_size == 0 {
-            return Err(tp_builder_error!(
-                "Invalid arguments: core_pool_size({}) == 0.",
-                self.core_pool_size
-            ));
+            panic!("core_pool_size can not be 0.");
         }
-
-        Ok(())
     }
 }
 
@@ -230,22 +174,26 @@ mod tests {
     use super::ThreadPoolBuilder;
 
     #[test]
-    fn test_valid_arguments() {
-        let thread_pool = ThreadPoolBuilder::default()
+    #[should_panic]
+    fn test_builder_args1() {
+        ThreadPoolBuilder::default()
             .max_pool_size(7)
             .channel_capacity(3)
             .build();
-        assert!(thread_pool.is_err());
+    }
 
-        let thread_pool = ThreadPoolBuilder::default()
+    #[test]
+    #[should_panic]
+    fn test_builder_args2() {
+        ThreadPoolBuilder::default()
             .max_pool_size(6)
             .core_pool_size(7)
             .build();
-        assert!(thread_pool.is_err());
+    }
 
-        let thread_pool = ThreadPoolBuilder::default().core_pool_size(0).build();
-        assert!(thread_pool.is_err());
-
-        ThreadPoolBuilder::default().build().unwrap();
+    #[test]
+    #[should_panic]
+    fn test_builder_args3() {
+        ThreadPoolBuilder::default().core_pool_size(0).build();
     }
 }
