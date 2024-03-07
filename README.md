@@ -14,7 +14,7 @@ Or add this to your `Cargo.toml`:
 
 ```
 [dependencies]
-jtp = "0.1.1"
+jtp = "0.1.3"
 ```
 
 And use this library:
@@ -26,8 +26,7 @@ let thread_pool = ThreadPoolBuilder::default()
 	.max_pool_size(10) // Sets the maximum number of threads.
 	.channel_capacity(100) // Sets the capacity of the task queue.
 	.rejected_handler(RejectedTaskHandler::Abort)
-	.build()
-	.unwrap();
+	.build();
 
 thread_pool.execute(|| println!("Hello World"));
 thread_pool.wait();
